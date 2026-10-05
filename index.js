@@ -37,7 +37,16 @@ header.append(button1, button2);
 document.body.append(header, main);
 
 function generateCards() {
-  const icons = ["\u{1F680}", "\u{1F355}", "\u{1F431}", "\u{1F3B8}", "\u{1F335}", "\u{1F389}", "\u{1F4BB}", "\u{2615}"];
+  const icons = [
+    "\u{1F680}",
+    "\u{1F355}",
+    "\u{1F431}",
+    "\u{1F3B8}",
+    "\u{1F335}",
+    "\u{1F389}",
+    "\u{1F4BB}",
+    "\u{2615}",
+  ];
   const pairIcons = icons.concat(icons);
 
   // перемешка
@@ -47,7 +56,6 @@ function generateCards() {
     pairIcons[i] = pairIcons[j];
     pairIcons[j] = temp;
   }
-
   return pairIcons;
 }
 const shuffledIcons = generateCards();
@@ -60,10 +68,37 @@ for (let i = 0; i < 16; i++) {
   card.style.borderRadius = "12px";
   card.style.fontSize = "40px";
   card.style.cursor = "pointer";
-
   card.dataset.icon = shuffledIcons[i];
-
-
-
   main.append(card);
 }
+//переменные чтобы запомнить, что происходит 
+let firstCard = null;
+let secondCard = null;
+let isLocked = false;
+let moves = 0;
+let pairs = 0;
+let isGameFinished = false;
+let closeTimer = null;
+
+// счётчики над карточками
+const counters = document.createElement("div");
+counters.style.display = "flex";
+counters.style.justifyContent = "center";
+counters.style.gap = "24px";
+counters.style.padding = "16px";
+counters.style.backgroundColor = "#f4efe6";
+counters.style.color = "#1f3a5f";
+counters.style.fontSize = "20px";
+
+const movesText = document.createElement("p");
+movesText.textContent = "Ходы: " + moves;
+movesText.style.margin = "0";
+
+const pairsText = document.createElement("p");
+pairsText.textContent = "Пары: " + pairs + " из 8";
+pairsText.style.margin = "0";
+
+counters.append(movesText, pairsText);
+
+// блок со счётчиками перед игровым полем
+document.body.insertBefore(counters, main);
