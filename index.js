@@ -148,6 +148,7 @@ function openCard(card) {
 
   if (pairs === 8) {
     isGameFinished = true;
+    saveResult();
     openWinWindow();
   }
 }
@@ -241,6 +242,9 @@ function createWinContent() {
   newGameButton.textContent = "Новая игра";
   newGameButton.style.marginRight = "8px";
   styleModalButton(newGameButton);
+  newGameButton.addEventListener("click", function () {
+    startNewGame();
+  });
 
   wrap.append(title, movesLine, newGameButton, createCloseButton());
   return wrap;
@@ -274,6 +278,84 @@ function getResults() {
   return JSON.parse(text);
 }
 
+// ставим игры по порядку: меньше ходов выше, при равенстве раньше сыгранная выше
+function sortResults(results) {
+  for (let i = 0; i < results.length; i++) {
+    for (let j = 0; j < results.length - 1; j++) {
+      let leftMoves = results[j].moves;
+      let rightMoves = results[j + 1].moves;
+      let leftTime = results[j].playedAt;
+      let rightTime = results[j + 1].playedAt;
+
+      let needSwap = false;
+
+      if (leftMoves > rightMoves) {
+        needSwap = true;
+      }
+
+      if (leftMoves === rightMoves && leftTime > rightTime) {
+        needSwap = true;
+      }
+
+      if (needSwap === true) {
+        let temp = results[j];
+        results[j] = results[j + 1];
+        results[j + 1] = temp;
+      }
+    }
+  }
+}
+
+// после победы добавляем одну игру и оставляем 10 лучших
+function saveResult() {
+  let results = getResults();
+
+  let game = {};
+  game.moves = moves;
+  game.playedAt = Date.now();
+  results.push(game);
+
+  sortResults(results);
+
+  let top = [];
+  for (let i = 0; i < results.length; i++) {
+    if (i < 10) {
+      top.push(results[i]);
+    }
+  }
+
+  localStorage.setItem("memoryGameResults", JSON.stringify(top));
+}
+
+function startNewGame() {
+  clearTimeout(closeTimer);
+  closeTimer = null;
+  closeModal();
+
+  firstCard = null;
+  secondCard = null;
+  isLocked = false;
+  isGameFinished = false;
+  moves = 0;
+  pairs = 0;
+
+  movesText.textContent = "Ходы: 0";
+  pairsText.textContent = "Пары: 0 из 8";
+
+  const newIcons = generateCards();
+  const gameCards = main.querySelectorAll("button");
+
+  for (let i = 0; i < gameCards.length; i++) {
+    gameCards[i].textContent = "";
+    gameCards[i].dataset.icon = newIcons[i];
+    gameCards[i].dataset.matched = "";
+  }
+}
+
+button1.addEventListener("click", function () {
+  startNewGame();
+});
+
 function createLeaderboardContent() {
   const wrap = document.createElement("div");
 
@@ -283,18 +365,15 @@ function createLeaderboardContent() {
   title.style.margin = "0 0 12px";
   wrap.append(title);
 
-  const results = getResults();
-  const sorted = results.slice();
+  let results = getResults();
+  sortResults(results);
 
-  // меньше ходов — выше; при равенстве раньше сыгранная игра выше
-  sorted.sort(function (a, b) {
-    if (a.moves !== b.moves) {
-      return a.moves - b.moves;
+  let top = [];
+  for (let i = 0; i < results.length; i++) {
+    if (i < 10) {
+      top.push(results[i]);
     }
-    return a.playedAt - b.playedAt;
-  });
-
-  const top = sorted.slice(0, 10);
+  }
 
   if (top.length === 0) {
     const emptyText = document.createElement("p");
