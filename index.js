@@ -114,8 +114,41 @@ function openCard(card) {
   card.textContent = card.dataset.icon;
   if (firstCard === null) {
     firstCard = card;
-  } else {
-    secondCard = card;
+    return;
+  }
+
+  secondCard = card;
+
+  moves = moves + 1;
+  movesText.textContent = "Ходы: " + moves;
+
+  // картинки разные - прячем их через секунду
+  if (firstCard.dataset.icon !== secondCard.dataset.icon) {
+    isLocked = true;
+
+    closeTimer = setTimeout(function () {
+      firstCard.textContent = "";
+      secondCard.textContent = "";
+      firstCard = null;
+      secondCard = null;
+      isLocked = false;
+      closeTimer = null;
+    }, 1000);
+    return;
+  }
+
+  // картинки одинаковые - оставляем открытыми и идём дальше
+  firstCard.dataset.matched = "yes";
+  secondCard.dataset.matched = "yes";
+  firstCard = null;
+  secondCard = null;
+
+  pairs = pairs + 1;
+  pairsText.textContent = "Пары: " + pairs + " из 8";
+
+  if (pairs === 8) {
+    isGameFinished = true;
+    openWinWindow();
   }
 }
 const cards = main.querySelectorAll("button");
@@ -124,4 +157,62 @@ for (let i = 0; i < cards.length; i++) {
   cards[i].addEventListener("click", function () {
     openCard(cards[i]);
   });
+}
+
+// окно победы
+const winOverlay = document.createElement("div");
+winOverlay.style.position = "fixed";
+winOverlay.style.left = "0";
+winOverlay.style.top = "0";
+winOverlay.style.width = "100%";
+winOverlay.style.height = "100%";
+winOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+winOverlay.style.display = "none";
+winOverlay.style.alignItems = "center";
+winOverlay.style.justifyContent = "center";
+
+const winBox = document.createElement("div");
+winBox.style.backgroundColor = "#f4efe6";
+winBox.style.padding = "24px";
+winBox.style.borderRadius = "12px";
+winBox.style.textAlign = "center";
+
+const winTitle = document.createElement("p");
+winTitle.textContent = "Победа!";
+winTitle.style.fontSize = "24px";
+winTitle.style.margin = "0 0 8px";
+
+const winMoves = document.createElement("p");
+winMoves.style.margin = "0 0 16px";
+
+const winNewGameButton = document.createElement("button");
+winNewGameButton.textContent = "Новая игра";
+winNewGameButton.style.marginRight = "8px";
+winNewGameButton.style.padding = "10px 16px";
+winNewGameButton.style.border = "none";
+winNewGameButton.style.borderRadius = "8px";
+winNewGameButton.style.backgroundColor = "#1f3a5f";
+winNewGameButton.style.color = "#f4efe6";
+winNewGameButton.style.cursor = "pointer";
+
+const winCloseButton = document.createElement("button");
+winCloseButton.textContent = "Закрыть";
+winCloseButton.style.padding = "10px 16px";
+winCloseButton.style.border = "none";
+winCloseButton.style.borderRadius = "8px";
+winCloseButton.style.backgroundColor = "#1f3a5f";
+winCloseButton.style.color = "#f4efe6";
+winCloseButton.style.cursor = "pointer";
+
+winCloseButton.addEventListener("click", function () {
+  winOverlay.style.display = "none";
+});
+
+winBox.append(winTitle, winMoves, winNewGameButton, winCloseButton);
+winOverlay.append(winBox);
+document.body.append(winOverlay);
+
+function openWinWindow() {
+  winMoves.textContent = "Ходы: " + moves;
+  winOverlay.style.display = "flex";
 }
