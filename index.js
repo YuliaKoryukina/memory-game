@@ -159,60 +159,192 @@ for (let i = 0; i < cards.length; i++) {
   });
 }
 
-// окно победы
-const winOverlay = document.createElement("div");
-winOverlay.style.position = "fixed";
-winOverlay.style.left = "0";
-winOverlay.style.top = "0";
-winOverlay.style.width = "100%";
-winOverlay.style.height = "100%";
-winOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-winOverlay.style.display = "none";
-winOverlay.style.alignItems = "center";
-winOverlay.style.justifyContent = "center";
+//окно модальное для победы и лидеров
+const modalOverlay = document.createElement("div");
+modalOverlay.style.position = "fixed";
+modalOverlay.style.left = "0";
+modalOverlay.style.top = "0";
+modalOverlay.style.width = "100%";
+modalOverlay.style.height = "100%";
+modalOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+modalOverlay.style.display = "none";
+modalOverlay.style.alignItems = "center";
+modalOverlay.style.justifyContent = "center";
+modalOverlay.style.zIndex = "10";
 
-const winBox = document.createElement("div");
-winBox.style.backgroundColor = "#f4efe6";
-winBox.style.padding = "24px";
-winBox.style.borderRadius = "12px";
-winBox.style.textAlign = "center";
+const modalBox = document.createElement("div");
+modalBox.style.backgroundColor = "#f4efe6";
+modalBox.style.padding = "24px";
+modalBox.style.borderRadius = "12px";
+modalBox.style.textAlign = "center";
+modalBox.style.color = "#1f3a5f";
 
-const winTitle = document.createElement("p");
-winTitle.textContent = "Победа!";
-winTitle.style.fontSize = "24px";
-winTitle.style.margin = "0 0 8px";
+modalOverlay.append(modalBox);
+document.body.append(modalOverlay);
 
-const winMoves = document.createElement("p");
-winMoves.style.margin = "0 0 16px";
+function openModal(content) {
+  modalBox.replaceChildren(content);
+  modalOverlay.style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
 
-const winNewGameButton = document.createElement("button");
-winNewGameButton.textContent = "Новая игра";
-winNewGameButton.style.marginRight = "8px";
-winNewGameButton.style.padding = "10px 16px";
-winNewGameButton.style.border = "none";
-winNewGameButton.style.borderRadius = "8px";
-winNewGameButton.style.backgroundColor = "#1f3a5f";
-winNewGameButton.style.color = "#f4efe6";
-winNewGameButton.style.cursor = "pointer";
+function closeModal() {
+  modalOverlay.style.display = "none";
+  document.body.style.overflow = "";
+}
 
-const winCloseButton = document.createElement("button");
-winCloseButton.textContent = "Закрыть";
-winCloseButton.style.padding = "10px 16px";
-winCloseButton.style.border = "none";
-winCloseButton.style.borderRadius = "8px";
-winCloseButton.style.backgroundColor = "#1f3a5f";
-winCloseButton.style.color = "#f4efe6";
-winCloseButton.style.cursor = "pointer";
-
-winCloseButton.addEventListener("click", function () {
-  winOverlay.style.display = "none";
+// клик по тёмному фону закрывает окно, клик по тексту внутри — нет
+modalOverlay.addEventListener("click", function (event) {
+  if (event.target === modalOverlay) {
+    closeModal();
+  }
 });
 
-winBox.append(winTitle, winMoves, winNewGameButton, winCloseButton);
-winOverlay.append(winBox);
-document.body.append(winOverlay);
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape") {
+    closeModal();
+  }
+});
+
+function styleModalButton(button) {
+  button.style.padding = "10px 16px";
+  button.style.border = "none";
+  button.style.borderRadius = "8px";
+  button.style.backgroundColor = "#1f3a5f";
+  button.style.color = "#f4efe6";
+  button.style.cursor = "pointer";
+}
+
+function createCloseButton() {
+  const button = document.createElement("button");
+  button.textContent = "Закрыть";
+  styleModalButton(button);
+  button.addEventListener("click", function () {
+    closeModal();
+  });
+  return button;
+}
+
+function createWinContent() {
+  const wrap = document.createElement("div");
+
+  const title = document.createElement("p");
+  title.textContent = "Победа!";
+  title.style.fontSize = "24px";
+  title.style.margin = "0 0 8px";
+
+  const movesLine = document.createElement("p");
+  movesLine.textContent = "Ходы: " + moves;
+  movesLine.style.margin = "0 0 16px";
+
+  const newGameButton = document.createElement("button");
+  newGameButton.textContent = "Новая игра";
+  newGameButton.style.marginRight = "8px";
+  styleModalButton(newGameButton);
+
+  wrap.append(title, movesLine, newGameButton, createCloseButton());
+  return wrap;
+}
 
 function openWinWindow() {
-  winMoves.textContent = "Ходы: " + moves;
-  winOverlay.style.display = "flex";
+  openModal(createWinContent());
 }
+
+function formatDate(playedAt) {
+  const date = new Date(playedAt);
+  let day = date.getDate();
+  let month = date.getMonth() + 1;
+  const year = date.getFullYear();
+
+  if (day < 10) {
+    day = "0" + day;
+  }
+  if (month < 10) {
+    month = "0" + month;
+  }
+
+  return day + "." + month + "." + year;
+}
+
+function getResults() {
+  const text = localStorage.getItem("memoryGameResults");
+  if (text === null) {
+    return [];
+  }
+  return JSON.parse(text);
+}
+
+function createLeaderboardContent() {
+  const wrap = document.createElement("div");
+
+  const title = document.createElement("p");
+  title.textContent = "Таблица лидеров";
+  title.style.fontSize = "24px";
+  title.style.margin = "0 0 12px";
+  wrap.append(title);
+
+  const results = getResults();
+  const sorted = results.slice();
+
+  // меньше ходов — выше; при равенстве раньше сыгранная игра выше
+  sorted.sort(function (a, b) {
+    if (a.moves !== b.moves) {
+      return a.moves - b.moves;
+    }
+    return a.playedAt - b.playedAt;
+  });
+
+  const top = sorted.slice(0, 10);
+
+  if (top.length === 0) {
+    const emptyText = document.createElement("p");
+    emptyText.textContent = "Пока нет результатов";
+    emptyText.style.margin = "0 0 16px";
+    wrap.append(emptyText);
+  } else {
+    const table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+    table.style.marginBottom = "16px";
+
+    const headerRow = document.createElement("tr");
+    const headers = ["Место", "Ходы", "Дата"];
+
+    for (let i = 0; i < headers.length; i++) {
+      const cell = document.createElement("th");
+      cell.textContent = headers[i];
+      cell.style.padding = "6px 10px";
+      headerRow.append(cell);
+    }
+    table.append(headerRow);
+
+    for (let i = 0; i < top.length; i++) {
+      const row = document.createElement("tr");
+
+      const placeCell = document.createElement("td");
+      placeCell.textContent = String(i + 1);
+
+      const movesCell = document.createElement("td");
+      movesCell.textContent = String(top[i].moves);
+
+      const dateCell = document.createElement("td");
+      dateCell.textContent = formatDate(top[i].playedAt);
+
+      placeCell.style.padding = "6px 10px";
+      movesCell.style.padding = "6px 10px";
+      dateCell.style.padding = "6px 10px";
+
+      row.append(placeCell, movesCell, dateCell);
+      table.append(row);
+    }
+
+    wrap.append(table);
+  }
+
+  wrap.append(createCloseButton());
+  return wrap;
+}
+
+button2.addEventListener("click", function () {
+  openModal(createLeaderboardContent());
+});
