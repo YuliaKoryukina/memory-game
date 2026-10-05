@@ -102,3 +102,26 @@ counters.append(movesText, pairsText);
 
 // блок со счётчиками перед игровым полем
 document.body.insertBefore(counters, main);
+
+// клик на карточку
+function openCard(card) {
+  if (isLocked || isGameFinished || secondCard !== null) {
+    return;
+  }
+  if (card === firstCard || card.dataset.matched === "yes") {
+    return;
+  }
+  card.textContent = card.dataset.icon;
+  if (firstCard === null) {
+    firstCard = card;
+  } else {
+    secondCard = card;
+  }
+}
+const cards = main.querySelectorAll("button");
+
+for (let i = 0; i < cards.length; i++) {
+  cards[i].addEventListener("click", function () {
+    openCard(cards[i]);
+  });
+}
